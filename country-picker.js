@@ -10,7 +10,8 @@
  * <select ng-model="selectedCountry" pvp-country-picker="name"></select>
  */
 angular.module('angular-country-picker',[])
-  .directive('pvpCountryPicker', function($compile) {
+  .directive('pvpCountryPicker', ['$compile', function($compile) {
+    var PRIORITY = 1;
     var countries = [
       {"name":"Afghanistan","alpha2":"AF","alpha3":"AFG","numeric":"004"},
       {"name":"Åland Islands","alpha2":"AX","alpha3":"ALA","numeric":"248"},
@@ -263,16 +264,26 @@ angular.module('angular-country-picker',[])
       {"name":"Zimbabwe","alpha2":"ZW","alpha3":"ZWE","numeric":"716"}];
 
     return {
+      priority: PRIORITY,
+      terminal: true,
       controller: function($scope) {
         $scope.countries = countries;
       },
-      link: function(scope, iElement, iAttrs) {
-        if(! iAttrs.pvpCountryPicker) {
-          iAttrs.pvpCountryPicker = 'alpha2';
-        }
-        var options = '<option ng-repeat="country in countries" value="{{country.' + iAttrs.pvpCountryPicker + '}}">{{country.name}}</option>';
-        iElement.append($compile(options)(scope));
+      compile: function (tElement, tAttrs) {
+            if(! tAttrs.pvpCountryPicker) {
+                  tAttrs.pvpCountryPicker = 'alpha2';
+            }
+            var ngOptions = 'country.' + tAttrs.pvpCountryPicker + ' as country.name for country in ::countries';
+            tAttrs.$set('ngOptions',  ngOptions);
+            
+            var linkFn = $compile(tElement, null, PRIORITY);
+
+            return function(scope) {
+                scope.countries = countries;
+                linkFn(scope);
+            };
       },
       restrict: 'A'
     };
-  });
+  }]
+);
